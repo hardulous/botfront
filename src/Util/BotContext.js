@@ -1,7 +1,7 @@
-import React, { createContext, useCallback, useState } from "react";
+import React, { createContext, useCallback, useEffect, useState } from "react";
+import { io } from "socket.io-client";
 import { v4 as uuidv4 } from "uuid";
 import BotMessage from "../Component/BotMessage";
-import UserMessage from "../Component/UserMessage";
 
 export const BotContext = createContext();
 
@@ -9,6 +9,7 @@ export const BotProvider = ({ children }) => {
   let uuid = uuidv4();
 
   const [openBot, setopenBot] = useState(false);
+  const [socket, setsocket] = useState("");
   const [messages, setmessages] = useState([
     {
       uuid,
@@ -23,7 +24,17 @@ export const BotProvider = ({ children }) => {
     },
   ]);
 
-  const [track, settrack] = useState([])
+  useEffect(() => {
+    if (openBot) {
+      setTimeout(() => {
+        setsocket(io("http://localhost:3002"));
+      }, 2000);
+    }
+    if(socket && !openBot){
+      socket.emit("kill-jar");
+      setsocket("")
+    }
+  }, [openBot]);
 
   return (
     <BotContext.Provider
@@ -32,8 +43,7 @@ export const BotProvider = ({ children }) => {
         setopenBot,
         messages,
         setmessages,
-        track,
-        settrack
+        socket,
       }}
     >
       {children}

@@ -4,7 +4,7 @@ import BotMessage from "./BotMessage";
 import UserMessage from "./UserMessage";
 
 const BotBody = () => {
-  const { messages, setmessages,track } = useContext(BotContext);
+  const { messages } = useContext(BotContext);
   return (
     <div>
       {messages.map((item, index) => {

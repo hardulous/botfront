@@ -5,40 +5,22 @@ import * as Yup from "yup";
 import React, { useContext, useEffect, useState } from "react";
 import { BotContext } from "../Util/BotContext";
 import { v4 as uuidv4 } from "uuid";
-import { io } from "socket.io-client";
 import BotMessage from "./BotMessage";
 import UserMessage from "./UserMessage";
 
 const BotInput = () => {
-  const { messages, setmessages, track, settrack } = useContext(BotContext);
-  const [socket, setsocket] = useState("");
-  const [datas, setdatas] = useState([]);
+
+  const { messages, setmessages,socket } = useContext(BotContext);
   const [res, setres] = useState();
 
   useEffect(() => {
-    setTimeout(() => {
-      setsocket(io("http://localhost:3002"));
-    }, 2000);
-  }, []);
-
-  useEffect(() => {
     if (socket) {
-      socket.on("connect", () => {
-        console.log(`connected with ${socket.id}`);
-      });
-
-      socket.on("receive-message", (res) => {
-        // const botMessage = {
-        //   isBot: true,
-        //   component: <BotMessage key={uuid} uuid={uuid} message={res} />,
-        // };
-        // setmessages([...messages, botMessage]);
+      socket.emit("start-jar");
+      socket.on("to-chatbot-front", (res) => {
         setres({
           type: "bot",
           message: res,
         });
-        // setdatas(datas=>[...datas,res])
-        // setQuotes(oldQuotes => [...oldQuotes, msg]);
       });
     }
   }, [socket]);
@@ -50,14 +32,17 @@ const BotInput = () => {
       if (res.type == "bot") {
         newMessage = {
           isBot: true,
-          component: <BotMessage key={uuid} uuid={uuid} message={res.message} />,
+          component: (
+            <BotMessage key={uuid} uuid={uuid} message={res.message} />
+          ),
         };
-      }
-      else{
-         newMessage = {
-          isUser:true,
-          component: <UserMessage key={uuid} uuid={uuid} message={res.message}/>
-        }
+      } else {
+        newMessage = {
+          isUser: true,
+          component: (
+            <UserMessage key={uuid} uuid={uuid} message={res.message} />
+          ),
+        };
       }
       setmessages([...messages, newMessage]);
     }
@@ -78,21 +63,16 @@ const BotInput = () => {
   });
 
   function askChatGpt(data, action) {
-    const userMessage = {
-      uuid: uuidv4(),
-      isUser: true,
-      message: data.userQuery,
-    };
     setres({
-      type:"user",
-      message:data.userQuery
-    })
+      type: "user",
+      message: data.userQuery,
+    });
     handleJarFile(data.userQuery);
     action.resetForm();
   }
 
   const handleJarFile = (query) => {
-    socket.emit("custom-event", query);
+    socket.emit("to-chatbot-back", query);
   };
 
   return (
